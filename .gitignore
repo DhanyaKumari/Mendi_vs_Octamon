@@ -1,0 +1,10 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Pygame output files
+*.csv
+
+# OS files
+.DS_Store
+Thumbs.db
