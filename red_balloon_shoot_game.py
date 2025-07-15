@@ -38,7 +38,7 @@ SAVE_PATH = os.path.join(top_dir, f"{PARTICIPANT_ID}_balloon_performance.csv")
 
 # Speed settings
 BORING_SPEED = 0.04
-INTENSE_SPEED = 0.20
+INTENSE_SPEED = 0.15
 
 # Define major low/high phases (ms) for 7 phases: low, high, low, high, low, high, low
 # Split GAME_DURATION into 7 equal windows
@@ -303,13 +303,14 @@ class Game:
 
             # Draw everything
             self.screen.fill(BACKGROUND_COLOR)
-            pygame.draw.line(self.screen, LINE_COLOR, (0, self.line_y), (WIDTH, self.line_y), 4)
+            pygame.draw.line(self.screen, LINE_COLOR, (0, self.line_y), (WIDTH, self.line_y), 3)
             for b in self.balloons:
                 b.draw(self.screen)
             x, y = pygame.mouse.get_pos()
-            size = 20
+            size = 21;
+            inner_size = 13;
             pygame.draw.circle(self.screen, self.crosshair_color, (x, y), size, 2)
-            pygame.draw.circle(self.screen, self.crosshair_color, (x, y), size // 2, 1)
+            pygame.draw.circle(self.screen, self.crosshair_color, (x, y), inner_size, 1)
             pygame.draw.line(self.screen, self.crosshair_color, (x - size, y), (x + size, y), 2)
             pygame.draw.line(self.screen, self.crosshair_color, (x, y - size), (x, y + size), 2)
             pygame.display.flip()

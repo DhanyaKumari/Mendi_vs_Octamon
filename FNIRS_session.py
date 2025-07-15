@@ -57,6 +57,24 @@ def show_countdown(screen, clock, label):
         time.sleep(1)
 
 
+def show_instructions(screen, clock, duration_ms):
+    """
+    Display an instruction message for duration_ms milliseconds.
+    """
+    start = pygame.time.get_ticks()
+    while pygame.time.get_ticks() - start < duration_ms:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); sys.exit()
+        screen.fill(BLACK)
+        instr_text = "Please focus on the screen"
+        instr_render = FONT.render(instr_text, True, WHITE)
+        instr_rect = instr_render.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        screen.blit(instr_render, instr_rect)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 def init_screen():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -73,6 +91,7 @@ def init_screen():
 def main():
     # 1-Back Game
     screen, clock = init_screen()
+    show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
     show_countdown(screen, clock, "1-Back Game")
     pygame.quit()
@@ -80,6 +99,7 @@ def main():
 
     # 3-Back Game
     screen, clock = init_screen()
+    show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
     show_countdown(screen, clock, "3-Back Game")
     pygame.quit()
@@ -87,6 +107,7 @@ def main():
 
     # Red Balloon Game
     screen, clock = init_screen()
+    show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
     show_countdown(screen, clock, "Red Balloon Game")
     pygame.quit()
@@ -94,6 +115,7 @@ def main():
 
     # Final Fixation
     screen, clock = init_screen()
+    show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
     pygame.quit()
 
