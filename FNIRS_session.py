@@ -6,18 +6,17 @@ import os
 
 # Paths to individual game scripts
 codes_dir = os.path.dirname(os.path.abspath(__file__))
-oneback_script = os.path.join(codes_dir, 'oneback_game.py')
-threeback_script = os.path.join(codes_dir, 'threeback_game.py')
-redballoon_script = os.path.join(codes_dir, 'red_balloon_shoot_game.py')
+oneback_script = os.path.join(codes_dir, 'one back test.py')
+threeback_script = os.path.join(codes_dir, 'three back test.py')
+balloon_test2_script = os.path.join(codes_dir, 'balloon test 2.py')
 
 # Prompt for participant ID once
 try:
-    participant_id = input("Enter participant ID (e.g. P01): ")
+    participant_id = input("Enter participant ID: ")
 except Exception:
     participant_id = 'P01'
 
 # Shared settings
-WIDTH, HEIGHT = 800, 600
 FPS = 60
 FIXATION_MS = 30000  # 30 seconds
 COUNTDOWN_START = 3
@@ -77,7 +76,11 @@ def show_instructions(screen, clock, duration_ms):
 
 def init_screen():
     pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    # Full screen mode
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    # Update global dimensions
+    global WIDTH, HEIGHT
+    WIDTH, HEIGHT = screen.get_size()
     pygame.display.set_caption("Combined Session")
     clock = pygame.time.Clock()
     global FONT
@@ -89,35 +92,36 @@ def init_screen():
 
 
 def main():
-    # 1-Back Game
+    # 1-Back Test
     screen, clock = init_screen()
     show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
-    show_countdown(screen, clock, "1-Back Game")
+    show_countdown(screen, clock, "1-Back Test")
     pygame.quit()
     subprocess.run([sys.executable, oneback_script, participant_id], check=True)
 
-    # 3-Back Game
+    # 3-Back Test
     screen, clock = init_screen()
     show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
-    show_countdown(screen, clock, "3-Back Game")
+    show_countdown(screen, clock, "3-Back Test")
     pygame.quit()
     subprocess.run([sys.executable, threeback_script, participant_id], check=True)
 
-    # Red Balloon Game
+    # Balloon Test2
     screen, clock = init_screen()
     show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
-    show_countdown(screen, clock, "Red Balloon Game")
+    show_countdown(screen, clock, "Balloon Test2")
     pygame.quit()
-    subprocess.run([sys.executable, redballoon_script, participant_id], check=True)
+    subprocess.run([sys.executable, balloon_test2_script, participant_id], check=True)
 
     # Final Fixation
     screen, clock = init_screen()
     show_instructions(screen, clock, 6000)
     show_fixation(screen, clock, FIXATION_MS)
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
