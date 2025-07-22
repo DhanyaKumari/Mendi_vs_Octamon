@@ -4,14 +4,15 @@ import csv
 import os
 import time
 import sys
+import string
 
-# Override default ID if passed via CLI
+# override default ID if passed via CLI
 if len(sys.argv) > 1:
     PARTICIPANT_ID = sys.argv[1]
 else:
     PARTICIPANT_ID = "P01"
 
-# Initialize Pygame and set fullscreen
+# Initialize Pygame and set full screen
 pygame.init()
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 WIDTH, HEIGHT = screen.get_size()
@@ -20,11 +21,12 @@ clock = pygame.time.Clock()
 
 # Settings
 FPS = 60
-TRIAL_DURATION_MS = 2000      # Total trial duration per letter (ms)
+TRIAL_DURATION_MS = 2000      # Total trial duration (ms)
 LETTER_DISPLAY_MS = 1000      # Letter display duration (ms)
-FADE_DURATION_MS = 20         # Fade-out duration (ms)
-TOTAL_DURATION_SEC = 150      # Total seconds to run game
+FADE_DURATION_MS = 20         # Fade duration (ms)
+TOTAL_DURATION_SEC = 150      # 2.5 minutes
 TOTAL_TRIALS = TOTAL_DURATION_SEC * 1000 // TRIAL_DURATION_MS
+MATCH_RATIO = 0.3             # 30% matches
 
 # Prepare save directory and path
 BASE_SAVE_DIR = os.path.join(
@@ -39,17 +41,23 @@ WHITE, BLACK = (255, 255, 255), (0, 0, 0)
 PURPLE, DARK_PURPLE = (128, 0, 255), (88, 0, 180)
 BLUE, DARK_BLUE = (0, 150, 255), (0, 100, 180)
 try:
-    FONT_LARGE = pygame.font.SysFont("lato", 350)
-    FONT_MEDIUM = pygame.font.SysFont("lato", 60)
+    FONT_LARGE = pygame.font.SysFont("lato", 400)
+    FONT_MEDIUM = pygame.font.SysFont("lato", 90)
+    FONT_BUTTON = pygame.font.SysFont("lato", 50)
     FONT_SMALL = pygame.font.SysFont("lato", 36)
 except:
-    FONT_LARGE = pygame.font.SysFont("arial", 350)
-    FONT_MEDIUM = pygame.font.SysFont("arial", 60)
+    FONT_LARGE = pygame.font.SysFont("arial", 400)
+    FONT_MEDIUM = pygame.font.SysFont("arial", 90)
+    FONT_BUTTON = pygame.font.SysFont("arial", 50)
     FONT_SMALL = pygame.font.SysFont("arial", 36)
 
-# Button rects
-no_match_btn = pygame.Rect(WIDTH//2 - 200, HEIGHT - 120, 180, 80)
-match_btn    = pygame.Rect(WIDTH//2 + 20,  HEIGHT - 120, 180, 80)
+# Button setup
+btn_w, btn_h = 260, 90
+spacing = 50
+total_w = btn_w * 2 + spacing
+x0 = WIDTH//2 - total_w//2
+no_match_btn = pygame.Rect(x0, HEIGHT - btn_h - 40, btn_w, btn_h)
+match_btn    = pygame.Rect(x0 + btn_w + spacing, HEIGHT - btn_h - 40, btn_w, btn_h)
 
 
 def draw_text(text, font, color, x, y, alpha=255):
@@ -61,131 +69,153 @@ def draw_text(text, font, color, x, y, alpha=255):
 
 
 def draw_buttons(highlight):
-    left_color  = DARK_PURPLE if highlight == "left"  else PURPLE
+    left_color  = DARK_PURPLE if highlight == "left" else PURPLE
     right_color = DARK_BLUE   if highlight == "right" else BLUE
-    pygame.draw.rect(screen, left_color,  no_match_btn, border_radius=10)
-    pygame.draw.rect(screen, WHITE,      no_match_btn, 2, border_radius=10)
-    draw_text("NO MATCH", FONT_SMALL, WHITE, no_match_btn.centerx, no_match_btn.centery)
-    pygame.draw.rect(screen, right_color, match_btn, border_radius=10)
-    pygame.draw.rect(screen, WHITE,       match_btn, 2, border_radius=10)
-    draw_text("MATCH",     FONT_SMALL, WHITE, match_btn.centerx,    match_btn.centery)
+    pygame.draw.rect(screen, left_color,  no_match_btn, border_radius=15)
+    pygame.draw.rect(screen, WHITE,       no_match_btn, 3, border_radius=15)
+    draw_text("NO MATCH", FONT_BUTTON, WHITE, no_match_btn.centerx, no_match_btn.centery)
+    pygame.draw.rect(screen, right_color, match_btn,    border_radius=15)
+    pygame.draw.rect(screen, WHITE,       match_btn,    3, border_radius=15)
+    draw_text("MATCH",    FONT_BUTTON, WHITE, match_btn.centerx,    match_btn.centery)
+
+
+def generate_matches(n, ratio):
+    """Return a list of booleans of length n with ~ratio*n True values, no two Trues in a row."""
+    target = int(n * ratio)
+    flags = []
+    count = 0
+    for i in range(n):
+        remaining = n - i
+        needed = target - count
+        if i < 3 or needed <= 0 or (flags and flags[-1]):
+            flags.append(False)
+        else:
+            if random.random() < needed / remaining:
+                flags.append(True)
+                count += 1
+            else:
+                flags.append(False)
+    return flags
+
+
+def generate_sequence(matches):
+    """Build letter sequence: at i>=3, if matches[i] then repeat letter from i-3, else pick new."""
+    seq = []
+    letters = string.ascii_uppercase
+    for i, is_match in enumerate(matches):
+        if i < 3 or not is_match:
+            if i >= 3:
+                opts = [l for l in letters if l != seq[i-3]]
+            else:
+                opts = letters
+            seq.append(random.choice(opts))
+        else:
+            seq.append(seq[i-3])
+    return seq
+
+
+to_match = generate_matches(TOTAL_TRIALS, MATCH_RATIO)
+sequence = generate_sequence(to_match)
 
 
 def save_summary(correct, incorrect, reaction_times, total_trials):
     missed = total_trials - (correct + incorrect)
-    accuracy = (correct / total_trials * 100) if total_trials > 0 else 0
+    accuracy = (correct / total_trials) * 100 if total_trials > 0 else 0
     mean_rt = sum(reaction_times) / len(reaction_times) if reaction_times else 0
 
     try:
         with open(SAVE_PATH, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(["metric", "value"])
-            writer.writerow(["total_trials", total_trials])
-            writer.writerow(["correct_responses", correct])
-            writer.writerow(["incorrect_responses", incorrect])
-            writer.writerow(["missed_targets", missed])
-            writer.writerow(["accuracy", round(accuracy, 2)])
-            writer.writerow(["mean_reaction_time", round(mean_rt, 2)])
+            w = csv.writer(f)
+            # single summary row as metric,value pairs
+            w.writerow(["metric", "value"])
+            w.writerow(["total_trials", total_trials])
+            w.writerow(["correct_responses", correct])
+            w.writerow(["incorrect_responses", incorrect])
+            w.writerow(["missed_targets", missed])
+            w.writerow(["accuracy_percent", round(accuracy, 2)])
+            w.writerow(["mean_reaction_time_ms", round(mean_rt, 2)])
         print(f"✅ 3-back results saved to: {SAVE_PATH}")
     except Exception as e:
-        print(f"❌ Failed to save summary: {e}")
+        print(f"❌ Failed to save results: {e}")
 
 
 def run_game():
-    # History for 3-back: [last, two-back, three-back]
-    prev_letters = [None, None, None]
-    current = random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-    match_prob = 0.5
-    trial_index = 0
-
+    correct = incorrect = 0
+    reaction_times = []
+    idx = 0
     response = None
     rt = None
-    reaction_times = []
-    correct = 0
-    incorrect = 0
 
-    trial_start = pygame.time.get_ticks()
-    reaction_clock = trial_start
+    start_time = pygame.time.get_ticks()
+    react_clock = start_time
+
     running = True
+    # Now we only loop on 'running' and break manually when done
+    while running:
+        # Once we've done all trials, stop before drawing
+        if idx >= TOTAL_TRIALS:
+            break
 
-    while running and trial_index < TOTAL_TRIALS:
         now = pygame.time.get_ticks()
-        elapsed = now - trial_start
+        elapsed = now - start_time
 
-        # Advance trial
+        # end of trial: score and advance
         if elapsed >= TRIAL_DURATION_MS:
-            is_target = (current == prev_letters[2]) if trial_index > 2 else None
-            if trial_index > 2:
+            if idx >= 3:
                 if response is not None:
-                    if response == is_target:
+                    if response == to_match[idx]:
                         correct += 1
                     else:
                         incorrect += 1
                     if rt is not None:
                         reaction_times.append(rt)
-            # Shift history
-            prev_letters[2] = prev_letters[1]
-            prev_letters[1] = prev_letters[0]
-            prev_letters[0] = current
-            # Next letter
-            if random.random() < match_prob and prev_letters[2] is not None:
-                current = prev_letters[2]
-            else:
-                current = random.choice([c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if c != prev_letters[2]])
-
-            trial_index += 1
-            trial_start = now
-            reaction_clock = now
+            # advance to next trial
+            idx += 1
             response = None
             rt = None
+            start_time = now
+            react_clock = now
+            # if that was the last trial, exit before trying to draw
+            if idx >= TOTAL_TRIALS:
+                break
 
-        # Draw screen
+        # drawing
         screen.fill(BLACK)
         draw_text("3-Back Game", FONT_MEDIUM, PURPLE, WIDTH//2, 60)
-        if elapsed < LETTER_DISPLAY_MS:
-            draw_text(current, FONT_LARGE, WHITE, WIDTH//2, HEIGHT//2)
-        elif elapsed < LETTER_DISPLAY_MS + FADE_DURATION_MS:
-            fade_elapsed = elapsed - LETTER_DISPLAY_MS
-            alpha = max(0, 255 - int(255 * fade_elapsed / FADE_DURATION_MS))
-            draw_text(current, FONT_LARGE, WHITE, WIDTH//2, HEIGHT//2, alpha)
 
-        # Buttons inactive for first three trials
-        highlight = None
-        if trial_index > 2:
-            if response is True:
-                highlight = "right"
-            elif response is False:
-                highlight = "left"
-        draw_buttons(highlight)
+        phase = pygame.time.get_ticks() - start_time
+        if phase < LETTER_DISPLAY_MS:
+            draw_text(sequence[idx], FONT_LARGE, WHITE, WIDTH//2, HEIGHT//2)
+        elif phase < LETTER_DISPLAY_MS + FADE_DURATION_MS:
+            fade = phase - LETTER_DISPLAY_MS
+            alpha = max(0, 255 - int(255 * fade / FADE_DURATION_MS))
+            draw_text(sequence[idx], FONT_LARGE, WHITE, WIDTH//2, HEIGHT//2, alpha)
+
+        hl = None
+        if idx >= 3 and response is not None:
+            hl = "right" if response else "left"
+        draw_buttons(hl)
+
         pygame.display.flip()
 
-        # Handle events
-        for e in pygame.event.get():
-            if e.type == pygame.QUIT or (e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE):
+        # input handling
+        for ev in pygame.event.get():
+            if ev.type == pygame.QUIT:
                 running = False
-            if trial_index > 2 and response is None:
-                if e.type == pygame.KEYDOWN:
-                    if e.key == pygame.K_LEFT:
-                        response = False
-                        rt = pygame.time.get_ticks() - reaction_clock
-                    elif e.key == pygame.K_RIGHT:
-                        response = True
-                        rt = pygame.time.get_ticks() - reaction_clock
-                elif e.type == pygame.MOUSEBUTTONDOWN:
-                    mx, my = e.pos
-                    if no_match_btn.collidepoint(mx, my):
-                        response = False
-                        rt = pygame.time.get_ticks() - reaction_clock
-                    elif match_btn.collidepoint(mx, my):
-                        response = True
-                        rt = pygame.time.get_ticks() - reaction_clock
+            elif idx >= 3 and response is None and ev.type == pygame.KEYDOWN:
+                if ev.key == pygame.K_LEFT:
+                    response = False
+                    rt = pygame.time.get_ticks() - react_clock
+                elif ev.key == pygame.K_RIGHT:
+                    response = True
+                    rt = pygame.time.get_ticks() - react_clock
 
         clock.tick(FPS)
 
-    # Save summary (exclude first three trials)
-    total_effective = max(0, trial_index - 3)
-    save_summary(correct, incorrect, reaction_times, total_effective)
+    # save and quit
+    save_summary(correct, incorrect, reaction_times, idx)
     pygame.quit()
+
 
 if __name__ == "__main__":
     run_game()
