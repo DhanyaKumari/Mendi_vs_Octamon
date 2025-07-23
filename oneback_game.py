@@ -24,17 +24,16 @@ FPS = 60
 TRIAL_DURATION_MS = 2000      # Total trial duration (ms)
 LETTER_DISPLAY_MS = 1000      # Letter display duration (ms)
 FADE_DURATION_MS = 20         # Fade duration (ms)
-TOTAL_DURATION_SEC = 150      # 2.5 minutes
-TOTAL_TRIALS = TOTAL_DURATION_SEC * 1000 // TRIAL_DURATION_MS
+TOTAL_TRIALS = 61             # 1 warm-up + 60 scored
+TOTAL_DURATION_SEC = 122      # ~2 minutes + 2 seconds to allow 61 trials
 MATCH_RATIO = 0.3             # 30% matches
 
-# Prepare save directory and path on Desktop under study folder
+# Prepare save directory and path
 BASE_SAVE_DIR = os.path.join(
     os.path.expanduser("~"),
     "OneDrive", "Desktop", "Mendi_vs_Octamon_Study", "One_back_performance"
 )
 os.makedirs(BASE_SAVE_DIR, exist_ok=True)
-# Save file named with performance suffix
 SAVE_PATH = os.path.join(BASE_SAVE_DIR, f"{PARTICIPANT_ID}_1-back_performance.csv")
 
 # Colors & Fonts
@@ -42,17 +41,16 @@ WHITE, BLACK = (255, 255, 255), (0, 0, 0)
 PURPLE, DARK_PURPLE = (128, 0, 255), (88, 0, 180)
 BLUE, DARK_BLUE = (0, 150, 255), (0, 100, 180)
 try:
-    FONT_LARGE = pygame.font.SysFont("lato", 400)
+    FONT_LARGE = pygame.font.SysFont("lato", 500)
     FONT_MEDIUM = pygame.font.SysFont("lato", 90)
     FONT_BUTTON = pygame.font.SysFont("lato", 50)
     FONT_SMALL = pygame.font.SysFont("lato", 36)
 except:
-    FONT_LARGE = pygame.font.SysFont("arial", 400)
+    FONT_LARGE = pygame.font.SysFont("arial", 500)
     FONT_MEDIUM = pygame.font.SysFont("arial", 90)
     FONT_BUTTON = pygame.font.SysFont("arial", 50)
     FONT_SMALL = pygame.font.SysFont("arial", 36)
 
-# Button rects with gap
 btn_w, btn_h = 260, 90
 spacing = 50
 total_width = btn_w * 2 + spacing
@@ -60,14 +58,12 @@ x_start = WIDTH//2 - total_width//2
 no_match_btn = pygame.Rect(x_start, HEIGHT - btn_h - 40, btn_w, btn_h)
 match_btn    = pygame.Rect(x_start + btn_w + spacing, HEIGHT - btn_h - 40, btn_w, btn_h)
 
-
 def draw_text(text, font, color, x, y, alpha=255):
     surf = font.render(text, True, color)
     if alpha < 255:
         surf.set_alpha(alpha)
     rect = surf.get_rect(center=(x, y))
     screen.blit(surf, rect)
-
 
 def draw_buttons(highlight):
     left_color  = DARK_PURPLE if highlight == "left" else PURPLE
@@ -79,7 +75,6 @@ def draw_buttons(highlight):
     pygame.draw.rect(screen, WHITE,       match_btn,    3, border_radius=15)
     draw_text("MATCH",    FONT_BUTTON, WHITE, match_btn.centerx,    match_btn.centery)
 
-
 def generate_matches(n, ratio):
     target = int(n * ratio)
     matches = []
@@ -88,14 +83,11 @@ def generate_matches(n, ratio):
         remaining = n - i
         rem_needed = target - count
         if i == 0 or rem_needed <= 0:
-            # first trial and once done, no more matches
             matches.append(False)
         else:
-            # prevent any consecutive matches (max 1)
             if matches[-1]:
                 matches.append(False)
             else:
-                # probability based on remaining needed
                 if random.random() < rem_needed / remaining:
                     matches.append(True)
                     count += 1
@@ -103,13 +95,11 @@ def generate_matches(n, ratio):
                     matches.append(False)
     return matches
 
-
 def generate_sequence(matches):
     seq = []
     letters = string.ascii_uppercase
     for i, is_match in enumerate(matches):
         if i == 0 or not is_match:
-            # choose a letter different from last two
             opts = letters
             if len(seq) >= 2 and seq[-1] == seq[-2]:
                 opts = [l for l in letters if l != seq[-1]]
@@ -120,10 +110,8 @@ def generate_sequence(matches):
             seq.append(seq[-1])
     return seq
 
-# Pre-generate flags & sequence
 to_match = generate_matches(TOTAL_TRIALS, MATCH_RATIO)
 sequence = generate_sequence(to_match)
-
 
 def save_summary(correct, incorrect, reaction_times, total_trials):
     missed = total_trials - (correct + incorrect)
@@ -140,7 +128,7 @@ def save_summary(correct, incorrect, reaction_times, total_trials):
             w.writerow(["missed_targets", missed])
             w.writerow(["accuracy", round(accuracy,2)])
             w.writerow(["mean_reaction_time", round(mean_rt,2)])
-        print(f"✅ 3-back results saved to: {SAVE_PATH}")
+        print(f"✅ 1-back results saved to: {SAVE_PATH}")
     except Exception as e:
         print(f"❌ Failed to save results: {e}")
 
@@ -193,7 +181,9 @@ def run_game():
                     rt = pygame.time.get_ticks() - react_clock
         clock.tick(FPS)
 
-    save_summary(correct, incorrect, reaction_times, idx)
+    # Exclude first warm-up trial from scoring -> leaves exactly 60 scored trials
+    total_scored_trials = max(0, idx - 1)
+    save_summary(correct, incorrect, reaction_times, total_scored_trials)
     pygame.quit()
 
 if __name__ == "__main__":
