@@ -7,7 +7,7 @@ import sys
 if len(sys.argv) > 1:
     PARTICIPANT_ID = sys.argv[1]
 else:
-    PARTICIPANT_ID = "P018"
+    PARTICIPANT_ID = "P01"
 
 pygame.init()
 info = pygame.display.Info()
@@ -106,7 +106,7 @@ class Game:
                     up = self.interval_up_moves[i]
                     rate = round(hits/spawned*100,2) if spawned>0 else 0
                     w.writerow([start_s, spawned, hits, misses, avg_rt, up, down, rate])
-            print(f"✅ Red Balloon Game Results saved to {od_path}")
+            print(f"Results saved to {od_path}")
         except PermissionError as e:
             print(f"OneDrive write failed ({e}); writing to current directory instead.")
             local_path = os.path.join(os.getcwd(), fn)
@@ -125,7 +125,7 @@ class Game:
                     up = self.interval_up_moves[i]
                     rate = round(hits/spawned*100,2) if spawned>0 else 0
                     w.writerow([start_s, spawned, hits, misses, avg_rt, up, down, rate])
-            print(f"Results saved to {local_path}")
+            print(f"✅ Red Balloon game Results saved to {local_path}")
     def run(self):
         self.start_time = pygame.time.get_ticks(); running = True
         while running:
@@ -164,9 +164,26 @@ class Game:
                 if b.y > self.offset_y+self.game_h+b.radius: self.balloons.remove(b)
             if drag>0: self.line_y = min(self.offset_y+self.game_h-LINE_MARGIN, self.line_y+drag*dt)
             self.screen.fill(BACKGROUND_COLOR)
-            pygame.draw.rect(self.screen, BORDER_COLOR, (self.offset_x,self.offset_y,self.game_w,self.game_h),3)
-            pygame.draw.line(self.screen, LINE_COLOR, (self.offset_x,self.line_y), (self.offset_x+self.game_w,self.line_y),3)
-            for b in self.balloons: b.draw(self.screen)
+            pygame.draw.rect(self.screen, BORDER_COLOR, (self.offset_x, self.offset_y, self.game_w, self.game_h), 3)
+            # Draw moving threshold line
+            pygame.draw.line(self.screen, LINE_COLOR,
+                             (self.offset_x, self.line_y),
+                             (self.offset_x + self.game_w, self.line_y), 3)
+            # Draw fixed green indicators at original middle and top thresholds
+            dash_len = 20
+            half = dash_len // 2
+            mid_y = self.offset_y + LINE_MARGIN
+            top_y = self.offset_y + self.game_h - LINE_MARGIN
+            pygame.draw.line(self.screen, CROSSHAIR_GREEN,
+                             (self.offset_x, mid_y), (self.offset_x + half, mid_y), 3)
+            pygame.draw.line(self.screen, CROSSHAIR_GREEN,
+                             (self.offset_x + self.game_w - half, mid_y), (self.offset_x + self.game_w, mid_y), 3)
+            pygame.draw.line(self.screen, CROSSHAIR_GREEN,
+                             (self.offset_x, top_y), (self.offset_x + half, top_y), 3)
+            pygame.draw.line(self.screen, CROSSHAIR_GREEN,
+                             (self.offset_x + self.game_w - half, top_y), (self.offset_x + self.game_w, top_y), 3)
+            for b in self.balloons:
+                b.draw(self.screen)
             mx,my = pygame.mouse.get_pos()
             pygame.draw.circle(self.screen, self.crosshair_color, (mx,my),21,2)
             pygame.draw.circle(self.screen, self.crosshair_color, (mx,my),13,1)
