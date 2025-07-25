@@ -24,8 +24,8 @@ FPS = 60
 TRIAL_DURATION_MS = 2000      # Total trial duration (ms)
 LETTER_DISPLAY_MS = 1000      # Letter display duration (ms)
 FADE_DURATION_MS = 20         # Fade duration (ms)
-TOTAL_TRIALS = 61             # 1 warm-up + 60 scored
-TOTAL_DURATION_SEC = 122      # ~2 minutes + 2 seconds to allow 61 trials
+TOTAL_TRIALS = 73             # 1 warm-up + 60 scored
+TOTAL_DURATION_SEC = 146      # ~2 minutes + 2 seconds to allow 61 trials
 MATCH_RATIO = 0.3             # 30% matches
 
 # Prepare save directory and path
