@@ -73,7 +73,7 @@ def show_instructions(screen, clock, duration_ms):
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
         screen.fill(BLACK)
-        instr_text = "Please focus on the screen"
+        instr_text = "Please focus on '+' shown on the screen "
         instr_render = FONT.render(instr_text, True, WHITE)
         instr_rect = instr_render.get_rect(center=(WIDTH // 2, HEIGHT // 2))
         screen.blit(instr_render, instr_rect)
@@ -171,7 +171,7 @@ def save_frustration(participant_id, task_name, rating):
         if new_file:
             writer.writerow(["participant_id", "task_name", "frustration"])
         writer.writerow([participant_id, task_name, rating])
-    print(f"✅ Saved frustration rating for {task_name}: {rating} to {frustration_file}")
+    print(f"⭐ Saved frustration rating for {task_name}: {rating} to {frustration_file}")
 
 
 def main():
