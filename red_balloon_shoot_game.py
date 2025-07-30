@@ -7,7 +7,7 @@ import sys
 if len(sys.argv) > 1:
     PARTICIPANT_ID = sys.argv[1]
 else:
-    PARTICIPANT_ID = "P01"
+    PARTICIPANT_ID = "test"
 
 pygame.init()
 info = pygame.display.Info()
@@ -94,14 +94,17 @@ class Game:
 
     def save_data(self):
         save_dir = os.path.expanduser('~/OneDrive/Desktop/Mendi_vs_Octamon_Study/Balloon_performance')
-        fn = f"{PARTICIPANT_ID}_balloon_performance.csv"
+        base_fn = f"{PARTICIPANT_ID}_balloon_performance.csv"
         os.makedirs(save_dir, exist_ok=True)
+
+        # Check if file exists and generate new filename with _v1, _v2, etc.
+        version = 1
+        fn = base_fn
+        while os.path.exists(os.path.join(save_dir, fn)):
+            fn = f"{PARTICIPANT_ID}_balloon_performance_v{version}.csv"
+            version += 1
         path = os.path.join(save_dir, fn)
-        if os.path.exists(path):
-            try:
-                os.remove(path)
-            except:
-                pass
+
         with open(path, 'w', newline='') as f:
             w = csv.writer(f)
             w.writerow(['interval_start_s','spawned','hits','misses','avg_reaction_ms','range_pixels','line_pos_pixels'])
@@ -116,7 +119,7 @@ class Game:
                 range_pixels = self.game_h - 2 * LINE_MARGIN
                 pos_pixels = self.interval_positions[i] - (self.offset_y + LINE_MARGIN)
                 w.writerow([start_s, spawned, hits, misses, avg_rt, range_pixels, pos_pixels])
-        print(f"Results saved to {path}")
+        print(f"✅Red Balloon Game Results saved to {path}")
 
     def run(self):
         self.start_time = pygame.time.get_ticks()
