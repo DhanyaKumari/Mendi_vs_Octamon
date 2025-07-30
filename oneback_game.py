@@ -10,7 +10,7 @@ import string
 if len(sys.argv) > 1:
     PARTICIPANT_ID = sys.argv[1]
 else:
-    PARTICIPANT_ID = "P01"
+    PARTICIPANT_ID = "test"
 
 # Initialize Pygame and set full screen
 pygame.init()
@@ -34,7 +34,17 @@ BASE_SAVE_DIR = os.path.join(
     "OneDrive", "Desktop", "Mendi_vs_Octamon_Study", "One_back_performance"
 )
 os.makedirs(BASE_SAVE_DIR, exist_ok=True)
-SAVE_PATH = os.path.join(BASE_SAVE_DIR, f"{PARTICIPANT_ID}_1-back_performance.csv")
+def get_unique_save_path(base_dir, participant_id, task_name):
+    i = 1
+    base_name = f"{participant_id}_{task_name}.csv"
+    full_path = os.path.join(base_dir, base_name)
+    while os.path.exists(full_path):
+        full_path = os.path.join(base_dir, f"{participant_id}_{task_name}_v{i}.csv")
+        i += 1
+    return full_path
+
+SAVE_PATH = get_unique_save_path(BASE_SAVE_DIR, PARTICIPANT_ID, "1-back_performance")
+
 
 # Colors & Fonts
 WHITE, BLACK = (255, 255, 255), (0, 0, 0)
